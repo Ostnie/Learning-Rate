@@ -11,7 +11,7 @@ Keras Callbacks to :
 ### Usage 
 
 ```
-lr_finder = LRFinder(min_lr=1e-5, max_lr=1e-2, steps_per_epoch=np.ceil(X_train.shape[0]/batch_size), epochs=1)
+lr_finder = LRFinder(min_lr=1e-5, max_lr=1e-2, step_size=np.ceil(X_train.shape[0]/batch_size))
 
 model.fit(X_train, y_train, callbacks=[lr_finder] )
 ```
@@ -34,7 +34,7 @@ lr_finder.plot_avg_loss()
 ## Stochastic Gradient Descent with Restart
 
 ```
-schedule = SGDRScheduler(min_lr=1e-4,max_lr=1e-3,steps_per_epoch=np.ceil(X_train.shape[0]/batch_size), lr_decay=0.9, cycle_length=3,mult_factor=1.5)
+sgdr = SGDRS(min_lr=1e-4,max_lr=1e-3,step_size=np.ceil(X_train.shape[0]/batch_size), lr_decay=0.9, mult_factor=1.5)
 
 model.fit(X_train, y_train, epochs=10, batch_size=128, validation_data=(X_test, y_test), callbacks=[schedule])
 ```

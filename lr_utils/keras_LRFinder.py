@@ -21,7 +21,7 @@ class LRFinder(Callback):
                                  beta=0.98)
             model.fit(X_train, Y_train, callbacks=[lr_finder])
             
-            lr_finder.plot_loss()
+            lr_finder.plot_avg_loss()
         ```
     
     # Arguments
@@ -32,10 +32,11 @@ class LRFinder(Callback):
         
     # References
         Original paper: https://arxiv.org/abs/1506.01186
+        Blog post : https://sgugger.github.io/how-do-you-find-a-good-learning-rate.html#how-do-you-find-a-good-learning-rate
     '''
     
     def __init__(self, min_lr=1e-5, max_lr=1e-2, step_size=None, beta=0.98):
-        super().__init__()
+        super(LRFinder, self).__init__()
         
         self.min_lr = min_lr
         self.max_lr = max_lr
@@ -57,7 +58,7 @@ class LRFinder(Callback):
         logs = logs or {}
         K.set_value(self.model.optimizer.lr, self.min_lr)
         
-    def on_batch_end(self, epoch, logs=None):
+    def on_batch_end(self, batch, logs=None):
         '''Record previous batch statistics and update the learning rate.'''
         logs = logs or {}
         self.iteration += 1
@@ -96,11 +97,13 @@ class LRFinder(Callback):
         plt.ylabel('Learning rate')
         
     def plot_avg_loss(self):
-        '''Helper function to quickly observe the learning rate experiment results.'''
+        '''Helper function to quickly observe the learning rate experiment results.
+        The loss has been smoothed by taking the exponentially weighed average'''
         plt.plot(self.history['lr'][10:-5], self.history['avg_loss'][10:-5])
         plt.xscale('log')
         plt.xlabel('Learning rate')
         plt.ylabel('Avg Loss')
+        
     def plot_loss(self):
         '''Helper function to quickly observe the learning rate experiment results.'''
         plt.plot(self.history['lr'][10:-5], self.history['loss'][10:-5])

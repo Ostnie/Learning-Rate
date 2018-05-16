@@ -67,6 +67,7 @@ class CyclicLR(Callback):
             
         # References
         Original paper: https://arxiv.org/pdf/1506.01186.pdf
+        The following implementation : https://github.com/bckenstler/CLR
     """
 
     def __init__(self, base_lr=1e-5, max_lr=1e-2, step_size=1000., mode='triangular',
@@ -91,9 +92,9 @@ class CyclicLR(Callback):
         else:
             self.scale_fn = scale_fn
             self.scale_mode = scale_mode
+        self.history = {}
         self.clr_iterations = 0.
         self.trn_iterations = 0.
-        self.history = {}
 
         self._reset()
 
@@ -126,11 +127,11 @@ class CyclicLR(Callback):
         else:
             K.set_value(self.model.optimizer.lr, self.clr())        
             
-    def on_batch_end(self, epoch, logs=None):
+    def on_batch_end(self, batch, logs=None):
         
         logs = logs or {}
-        self.trn_iterations += 1
         self.clr_iterations += 1
+        self.trn_iterations += 1
 
         self.history.setdefault('lr', []).append(K.get_value(self.model.optimizer.lr))
         self.history.setdefault('iterations', []).append(self.trn_iterations)
@@ -140,9 +141,7 @@ class CyclicLR(Callback):
         
         K.set_value(self.model.optimizer.lr, self.clr())   
         
-        
-        
-        
+          
 class CLR(Callback):
     """This callback implements a cyclical learning rate and momentum policy (CLR).
     The method cycles the learning rate between two boundaries with
@@ -154,7 +153,7 @@ class CLR(Callback):
         ```python
             clr = CLR(min_lr=1e-3, max_lr=1e-2,
                       min_mtm=0.85, max_mtm=0.95,
-                      annealing=0.1,step_size=2000.)
+                      annealing=0.1,step_size=np.ceil((X_train.shape[0]*epochs/batch_size)))
             model.fit(X_train, Y_train, callbacks=[clr])
         ```
     
@@ -163,8 +162,7 @@ class CLR(Callback):
             lower boundary in the cycle.
         max_lr: upper boundary in the cycle. Functionally,
             it defines the cycle amplitude (max_lr - min_lr).
-        step_size: number of training iterations to reach the 
-                   max_lr and the min_mtm.
+        step_size: number of training iterations in the cycle. To define as `np.ceil((X_train.shape[0]*epochs/batch_size))`
         max_mtm : initial value of the momentum    
         min_mtm : lower boundary in the cycle.
         annealing : percentage of the iterations where the lr
@@ -184,7 +182,7 @@ class CLR(Callback):
         self.min_mtm = min_mtm
         self.max_mtm = max_mtm
         self.annealing = annealing
-        self.step_size = step_size*(1-self.annealing)
+        self.step_size = step_size*(1-self.annealing)/2
         
         self.iterations = 0.
         self.history = {}
@@ -193,11 +191,11 @@ class CLR(Callback):
         if self.iterations < 2*self.step_size :
             x = np.abs(self.iterations/self.step_size - 1)
         else: 
-            x = np.abs(self.iterations/self.step_size - 1)/2+0.5
+            x = np.abs(self.iterations/self.step_size - 1)/2 + 0.5
         return self.min_lr + (self.max_lr-self.min_lr)*(1-x)
     
     def cmtm(self):
-        if self.iterations < 2*self.step_size :
+        if self.iterations < 2*self.step_size :   
             x = np.abs(self.iterations/self.step_size - 1)
         else: 
             x=1
@@ -208,7 +206,7 @@ class CLR(Callback):
         K.set_value(self.model.optimizer.lr, self.min_lr)
         K.set_value(self.model.optimizer.momentum, self.max_mtm)
          
-    def on_batch_end(self, epoch, logs=None):
+    def on_batch_end(self, batch, logs=None):
         
         logs = logs or {}
         self.iterations += 1

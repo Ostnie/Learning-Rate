@@ -31,6 +31,15 @@ lr_finder.plot_avg_loss()
 
 ![](Images/SmoothLoss.png)
 
+## 1-cycle policy
+
+```
+clr = CLR(min_lr=7e-3, max_lr=7e-2, min_mtm = 0.85, max_mtm = 0.95, annealing=0.1, step_size=np.ceil(((X_train.shape[0]*epochs)/(batch_size*2))))
+```
+![](Images/1cycleLR.png)
+
+![](Images/1cycleMTM.png)
+
 ## Stochastic Gradient Descent with Restart
 
 ```
@@ -58,4 +67,5 @@ This code is based on:
 - The method described in the 2015 paper "Cyclical Learning Rates for Training Neural Networks" by Leslie N. Smith
 - The implementation of the algorithm in fastai library by Jeremy Howard.
 - [This](https://github.com/bckenstler/CLR) implementation of CLR
+- The blog of Sylvain Gugger : https://sgugger.github.io
 

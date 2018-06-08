@@ -43,7 +43,7 @@ clr = CLR(min_lr=7e-3, max_lr=7e-2, min_mtm = 0.85, max_mtm = 0.95, annealing=0.
 ## Stochastic Gradient Descent with Restart
 
 ```
-sgdr = SGDRS(min_lr=1e-4,max_lr=1e-3,step_size=np.ceil(X_train.shape[0]/batch_size), lr_decay=0.9, mult_factor=1.5)
+sgdr = SGDR(min_lr=1e-4,max_lr=1e-3,step_size=np.ceil(X_train.shape[0]/batch_size), lr_decay=0.9, mult_factor=1.5)
 
 model.fit(X_train, y_train, epochs=10, batch_size=128, validation_data=(X_test, y_test), callbacks=[schedule])
 ```

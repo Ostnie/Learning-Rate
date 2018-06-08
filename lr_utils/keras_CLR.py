@@ -25,7 +25,7 @@ class CyclicLR(Callback):
     
     # Example
         ```python
-            clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+            clr = CyclicLR(min_lr=0.001, max_lr=0.006,
                                 step_size=2000., mode='triangular')
             model.fit(X_train, Y_train, callbacks=[clr])
         ```
@@ -33,17 +33,17 @@ class CyclicLR(Callback):
     Class also supports custom scaling functions:
         ```python
             clr_fn = lambda x: 0.5*(1+np.sin(x*np.pi/2.))
-            clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+            clr = CyclicLR(min_lr=0.001, max_lr=0.006,
                                 step_size=2000., scale_fn=clr_fn,
                                 scale_mode='cycle')
             model.fit(X_train, Y_train, callbacks=[clr])
         ```    
     # Arguments
-        base_lr: initial learning rate which is the
+        min_lr: initial learning rate which is the
             lower boundary in the cycle.
         max_lr: upper boundary in the cycle. Functionally,
-            it defines the cycle amplitude (max_lr - base_lr).
-            The lr at any cycle is the sum of base_lr
+            it defines the cycle amplitude (max_lr - min_lr).
+            The lr at any cycle is the sum of min_lr
             and some scaling of the amplitude; therefore 
             max_lr may not actually be reached depending on
             scaling function.
@@ -70,11 +70,11 @@ class CyclicLR(Callback):
         The following implementation : https://github.com/bckenstler/CLR
     """
 
-    def __init__(self, base_lr=1e-5, max_lr=1e-2, step_size=1000., mode='triangular',
+    def __init__(self, min_lr=1e-5, max_lr=1e-2, step_size=1000., mode='triangular',
                  gamma=1., scale_fn=None, scale_mode='cycle'):
         super(CyclicLR, self).__init__()
 
-        self.base_lr = base_lr
+        self.min_lr = min_lr
         self.max_lr = max_lr
         self.step_size = step_size
         self.mode = mode
@@ -98,13 +98,13 @@ class CyclicLR(Callback):
 
         self._reset()
 
-    def _reset(self, new_base_lr=None, new_max_lr=None,
+    def _reset(self, new_min_lr=None, new_max_lr=None,
                new_step_size=None):
         """Resets cycle iterations.
         Optional boundary/step size adjustment.
         """
-        if new_base_lr != None:
-            self.base_lr = new_base_lr
+        if new_min_lr != None:
+            self.min_lr = new_min_lr
         if new_max_lr != None:
             self.max_lr = new_max_lr
         if new_step_size != None:
@@ -115,15 +115,15 @@ class CyclicLR(Callback):
         cycle = np.floor(1+self.clr_iterations/(2*self.step_size))
         x = np.abs(self.clr_iterations/self.step_size - 2*cycle + 1)
         if self.scale_mode == 'cycle':
-            return self.base_lr + (self.max_lr-self.base_lr)*np.maximum(0, (1-x))*self.scale_fn(cycle)
+            return self.min_lr + (self.max_lr-self.min_lr)*np.maximum(0, (1-x))*self.scale_fn(cycle)
         else:
-            return self.base_lr + (self.max_lr-self.base_lr)*np.maximum(0, (1-x))*self.scale_fn(self.clr_iterations)
+            return self.min_lr + (self.max_lr-self.min_lr)*np.maximum(0, (1-x))*self.scale_fn(self.clr_iterations)
         
     def on_train_begin(self, logs={}):
         logs = logs or {}
 
         if self.clr_iterations == 0:
-            K.set_value(self.model.optimizer.lr, self.base_lr)
+            K.set_value(self.model.optimizer.lr, self.min_lr)
         else:
             K.set_value(self.model.optimizer.lr, self.clr())        
             

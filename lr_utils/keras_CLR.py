@@ -165,8 +165,9 @@ class CLR(Callback):
         step_size: number of training iterations in the cycle. To define as `np.ceil((X_train.shape[0]*epochs/batch_size))`
         max_mtm : initial value of the momentum    
         min_mtm : lower boundary in the cycle.
-        annealing : percentage of the iterations where the lr
+        annealing_stage : percentage of the iterations where the lr
                     will decrease lower than its min_lr
+        annealing_rate : in annealing phase learning rate will be decreased to annealing_rate*min_lr
                     
         # References
         Original paper: https://arxiv.org/pdf/1803.09820.pdf
@@ -174,25 +175,29 @@ class CLR(Callback):
 
     """
 
-    def __init__(self, min_lr=1e-5, max_lr=1e-2, min_mtm = 0.85, max_mtm=0.95, step_size=1000., annealing=0.1):
+    def __init__(self, min_lr=1e-5, max_lr=1e-2, min_mtm = 0.85, max_mtm=0.95, training_iterations=1000.,
+                 annealing_stage=0.1, annealing_rate=0.01):
         super(CLR, self).__init__()
 
         self.min_lr = min_lr
         self.max_lr = max_lr
         self.min_mtm = min_mtm
         self.max_mtm = max_mtm
-        self.annealing = annealing
-        self.step_size = step_size*(1-self.annealing)/2
-        
+        self.annealing_stage = annealing_stage
+        self.step_size = training_iterations*(1-self.annealing_stage)/2
+        self.min_annealing_lr = annealing_rate * min_lr
         self.iterations = 0.
+        self.training_iterations = training_iterations
         self.history = {}
         
     def clr(self):
         if self.iterations < 2*self.step_size :
             x = np.abs(self.iterations/self.step_size - 1)
-        else: 
-            x = np.abs(self.iterations/self.step_size - 1)/2 + 0.5
-        return self.min_lr + (self.max_lr-self.min_lr)*(1-x)
+            return self.min_lr + (self.max_lr-self.min_lr)*(1-x)
+        else:
+            x = min(1, float(self.iterations - 2 * self.step_size) / (self.training_iterations - 2 * self.step_size))
+            return self.min_lr - (self.min_lr - self.min_annealing_lr) * x
+        
     
     def cmtm(self):
         if self.iterations < 2*self.step_size :   
